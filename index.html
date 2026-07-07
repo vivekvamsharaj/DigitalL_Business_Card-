@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Business Card Generator</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome for social icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas & jsPDF for exporting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Core dimensions for a standard business card ratio */
+        .card-preview {
+            width: 400px;
+            height: 240px;
+            perspective: 1000px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center py-10 px-4">
+
+    <header class="text-center mb-10">
+        <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+            vCard Generator
+        </h1>
+        <p class="text-slate-400">Create, customize, and download your digital business card instantly.</p>
+    </header>
+
+    <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        
+        <!-- LEFT: User Input Form -->
+        <section class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 space-y-6">
+            <h2 class="text-xl font-bold border-b border-slate-700 pb-3">1. Enter Details</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
+                    <input type="text" id="input-name" value="Alex Morgan" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Job Title</label>
+                    <input type="text" id="input-role" value="Senior UX Designer" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 focus:outline-none focus:border-cyan-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Email</label>
+                    <input type="email" id="input-email" value="alex@designco.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Phone</label>
+                    <input type="text" id="input-phone" value="+1 (555) 019-2834" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 focus:outline-none focus:border-cyan-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Website</label>
+                    <input type="text" id="input-web" value="alexmorgan.dev" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Profile Image</label>
+                    <input type="file" id="input-avatar" accept="image/*" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-500 cursor-pointer">
+                </div>
+            </div>
+
+            <h2 class="text-xl font-bold border-b border-slate-700 pb-3 pt-4">2. Select Template</h2>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="setTemplate('modern')" class="template-btn p-3 rounded-xl border-2 border-cyan-500 bg-slate-900 text-sm font-medium transition cursor-pointer" id="btn-modern">Modern Dark</button>
+                <button onclick="setTemplate('minimal')" class="template-btn p-3 rounded-xl border-2 border-slate-700 bg-slate-900 text-sm font-medium transition cursor-pointer" id="btn-minimal">Minimal Light</button>
+                <button onclick="setTemplate('neon')" class="template-btn p-3 rounded-xl border-2 border-slate-700 bg-slate-900 text-sm font-medium transition cursor-pointer" id="btn-neon">Cyber Neon</button>
+            </div>
+        </section>
+
+        <!-- RIGHT: Live Preview & Actions -->
+        <section class="flex flex-col items-center justify-center space-y-8 sticky top-10">
+            
+            <!-- Card Wrapper Box -->
+            <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 flex flex-col items-center justify-center w-full">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Live Preview</span>
+                
+                <!-- The Dynamic Card Object -->
+                <div id="business-card" class="card-preview rounded-xl shadow-2xl overflow-hidden flex transition-all duration-300">
+                    <!-- Dynamic Inner HTML via JS -->
+                </div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="flex space-x-4 w-full">
+                <button onclick="downloadCard('png')" class="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-image"></i> Download PNG
+                </button>
+                <button onclick="downloadCard('pdf')" class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-file-pdf"></i> Download PDF
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- App Logic Scripts -->
+    <script>
+        // State variables
+        let currentTemplate = 'modern';
+        let avatarDataUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
+
+        // Form Inputs Mapping
+        const inputs = {
+            name: document.getElementById('input-name'),
+            role: document.getElementById('input-role'),
+            email: document.getElementById('input-email'),
+            phone: document.getElementById('input-phone'),
+            web: document.getElementById('input-web')
+        };
+
+        // Templates Dictionary
+        const templates = {
+            modern: () => `
+                <div class="w-1/3 bg-slate-950 flex flex-col items-center justify-center border-r border-slate-800 p-4">
+                    <img src="${avatarDataUrl}" class="w-20 h-20 rounded-full border-2 border-cyan-500 object-cover shadow-md mb-2">
+                    <div class="flex gap-2 text-slate-400 text-xs mt-2">
+                        <i class="fab fa-linkedin hover:text-cyan-400"></i>
+                        <i class="fab fa-twitter hover:text-cyan-400"></i>
+                        <i class="fab fa-github hover:text-cyan-400"></i>
+                    </div>
+                </div>
+                <div class="w-2/3 bg-slate-900 p-6 flex flex-col justify-between text-slate-200">
+                    <div>
+                        <h3 class="text-xl font-bold tracking-wide">${inputs.name.value}</h3>
+                        <p class="text-xs text-cyan-400 font-medium">${inputs.role.value}</p>
+                    </div>
+                    <div class="space-y-1.5 text-xs text-slate-400">
+                        <p><i class="fa-solid fa-envelope w-5 text-cyan-500"></i> ${inputs.email.value}</p>
+                        <p><i class="fa-solid fa-phone w-5 text-cyan-500"></i> ${inputs.phone.value}</p>
+                        <p><i class="fa-solid fa-globe w-5 text-cyan-500"></i> ${inputs.web.value}</p>
+                    </div>
+                </div>
+            `,
+            minimal: () => `
+                <div class="w-full h-full bg-slate-50 p-6 flex flex-col justify-between text-slate-800 border border-slate-200">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-2xl font-light tracking-tight text-slate-900">${inputs.name.value}</h3>
+                            <p class="text-xs text-slate-500 font-serif italic">${inputs.role.value}</p>
+                        </div>
+                        <img src="${avatarDataUrl}" class="w-14 h-14 rounded-lg object-cover filter grayscale">
+                    </div>
+                    <div class="flex justify-between items-end border-t border-slate-200 pt-3 text-[11px] text-slate-600 font-mono">
+                        <div>
+                            <p>${inputs.email.value}</p>
+                            <p>${inputs.phone.value}</p>
+                        </div>
+                        <p class="font-bold text-slate-900">${inputs.web.value}</p>
+                    </div>
+                </div>
+            `,
+            neon: () => `
+                <div class="w-full h-full bg-black p-6 flex flex-col justify-between text-white border-2 border-pink-500 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-purple-600 rounded-full blur-3xl opacity-40"></div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <img src="${avatarDataUrl}" class="w-16 h-16 rounded-full border-2 border-pink-500 object-cover shadow-[0_0_10px_rgba(236,72,153,0.5)]">
+                        <div>
+                            <h3 class="text-lg font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-400">${inputs.name.value}</h3>
+                            <p class="text-xs font-mono text-purple-400">${inputs.role.value}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-zinc-400 relative z-10 border-l-2 border-purple-500 pl-3">
+                        <p><i class="fa-solid fa-at text-pink-500"></i> ${inputs.email.value}</p>
+                        <p><i class="fa-solid fa-terminal text-purple-500"></i> ${inputs.web.value}</p>
+                        <p class="col-span-2"><i class="fa-solid fa-mobile-button text-pink-500"></i> ${inputs.phone.value}</p>
+                    </div>
+                </div>
+            `
+        };
+
+        // Render functions
+        function updateCard() {
+            const cardContainer = document.getElementById('business-card');
+            cardContainer.innerHTML = templates[currentTemplate]();
+        }
+
+        function setTemplate(templateName) {
+            currentTemplate = templateName;
+            
+            // UI Button Active Styling toggle
+            document.querySelectorAll('.template-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-500');
+                btn.classList.add('border-slate-700');
+            });
+            document.getElementById(`btn-${templateName}`).classList.remove('border-slate-700');
+            document.getElementById(`btn-${templateName}`).classList.add('border-cyan-500');
+
+            updateCard();
+        }
+
+        // Event listener for live updates
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', updateCard);
+        });
+
+        // Image Upload to Base64
+        document.getElementById('input-avatar').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    avatarDataUrl = event.target.result;
+                    updateCard();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Download Handler (Image & PDF)
+        function downloadCard(format) {
+            const cardElement = document.getElementById('business-card');
+            
+            // Increase scale quality during export
+            html2canvas(cardElement, { 
+                scale: 3, 
+                useCORS: true,
+                logging: false 
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                
+                if (format === 'png') {
+                    // Download as Image
+                    const link = document.createElement('a');
+                    link.download = `${inputs.name.value.replace(/\s+/g, '_')}_business_card.png`;
+                    link.href = imgData;
+                    link.click();
+                } else if (format === 'pdf') {
+                    // Download as PDF (matches standard card aspects scaled to millimeter size layouts)
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'mm',
+                        format: [85, 55] // Standard European/Digital Card aspect ratio size 
+                    });
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 0, 85, 55);
+                    pdf.save(`${inputs.name.value.replace(/\s+/g, '_')}_business_card.pdf`);
+                }
+            });
+        }
+
+        // Initialize First View
+        updateCard();
+    </script>
+</body>
+</html>
